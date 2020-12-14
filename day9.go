@@ -33,7 +33,7 @@ func findWeakness(nums []int, target int) int {
 	curSum := 0
 
 	// Keep a rolling sum and a map of the rolling sums to their indexes so we can
-	// do this in O(n) time.
+	// do this in O(n) time. Probably unecessary, since the input isn't that big.
 	//
 	// We want (j > i and we're on j):
 	//   rolling sum at j - rolling sum at i == target
