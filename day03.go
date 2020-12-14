@@ -23,7 +23,7 @@ func trees(grid []string, right, down int) int {
 }
 
 func main() {
-	file, err := os.Open("day3_input.txt")
+	file, err := os.Open("day03_input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}

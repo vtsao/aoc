@@ -23,7 +23,7 @@ func bs(start, end int, ranges string) int {
 }
 
 func main() {
-	file, err := os.Open("day5_input.txt")
+	file, err := os.Open("day05_input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}

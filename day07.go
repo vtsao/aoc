@@ -28,7 +28,7 @@ func findBagContains(bagsToContains map[string]map[string]int, bag string) int {
 }
 
 func main() {
-	file, err := os.Open("day7_input.txt")
+	file, err := os.Open("day07_input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}

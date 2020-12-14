@@ -81,7 +81,7 @@ func validate(p passport) bool {
 }
 
 func main() {
-	file, err := os.Open("day4_input.txt")
+	file, err := os.Open("day04_input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}

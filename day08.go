@@ -75,7 +75,7 @@ func runWithFix(insts []instruction) int {
 }
 
 func main() {
-	file, err := os.Open("day8_input.txt")
+	file, err := os.Open("day08_input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
