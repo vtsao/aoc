@@ -1,3 +1,4 @@
+// This program implements the solution for https://adventofcode.com/2020/day/6.
 package main
 
 import (
