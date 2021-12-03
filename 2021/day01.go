@@ -35,18 +35,16 @@ func main() {
 			increaseCnt1++
 		}
 	}
-	fmt.Printf("Part 1: %d measurements that are larger than previous measurement\n", increaseCnt1)
+	fmt.Printf("Part 1: %d\n", increaseCnt1)
 
 	increaseCnt2 := 0
-	if len(depths) > 2 {
-		prevMeasurement := depths[0] + depths[1] + depths[2]
-		for i := 1; i <= len(depths)-3; i++ {
-			curMeasurement := depths[i] + depths[i+1] + depths[i+2]
-			if curMeasurement > prevMeasurement {
-				increaseCnt2++
-			}
-			prevMeasurement = curMeasurement
+	prevMeasurement := depths[0] + depths[1] + depths[2]
+	for i := 1; i <= len(depths)-3; i++ {
+		curMeasurement := depths[i] + depths[i+1] + depths[i+2]
+		if curMeasurement > prevMeasurement {
+			increaseCnt2++
 		}
+		prevMeasurement = curMeasurement
 	}
-	fmt.Printf("Part 2: %d measurements that are larger than previous measurement\n", increaseCnt2)
+	fmt.Printf("Part 2: %d\n", increaseCnt2)
 }
