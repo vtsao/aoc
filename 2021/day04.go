@@ -3,6 +3,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -101,20 +102,22 @@ func main() {
 		log.Fatal(err)
 	}
 
-	first := false
+	var scores []int
 	for _, numStr := range nums {
 		num, err := strconv.Atoi(numStr)
 		if err != nil {
 			log.Fatal(err)
 		}
-
 		for _, b := range boards {
+			if b.finished {
+				continue
+			}
 			if b.mark(num) {
-				if !first {
-					log.Printf("Part 1: %d\n", b.sum*num)
-					first = true
-				}
+				scores = append(scores, b.sum*num)
+				b.finished = true
 			}
 		}
 	}
+	fmt.Printf("Part 1: %d\n", scores[0])
+	fmt.Printf("Part 2: %d\n", scores[len(scores)-1])
 }
