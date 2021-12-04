@@ -34,6 +34,7 @@ func newBoard() *board {
 type board struct {
 	rows, cols []*adjacent
 	sum        int
+	finished   bool
 }
 
 func (b *board) mark(num int) bool {
@@ -100,7 +101,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-outer:
+	first := false
 	for _, numStr := range nums {
 		num, err := strconv.Atoi(numStr)
 		if err != nil {
@@ -109,8 +110,10 @@ outer:
 
 		for _, b := range boards {
 			if b.mark(num) {
-				log.Printf("Part 1: %d\n", b.sum*num)
-				break outer
+				if !first {
+					log.Printf("Part 1: %d\n", b.sum*num)
+					first = true
+				}
 			}
 		}
 	}
