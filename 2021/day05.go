@@ -1,4 +1,4 @@
-// This program implements the solution for https://adventofcode.com/2021/day/4.
+// This program implements the solution for https://adventofcode.com/2021/day/5.
 package main
 
 import (
@@ -15,7 +15,7 @@ func main() {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	for i := 0; scanner.Scan(); i++ {
+	for scanner.Scan() {
 		scanner.Text()
 	}
 	if err := scanner.Err(); err != nil {
