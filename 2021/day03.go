@@ -9,6 +9,54 @@ import (
 	"strconv"
 )
 
+func oxygen(bits [][]rune, col int) [][]rune {
+	if len(bits) == 1 {
+		return bits
+	}
+
+	var zeroRows, oneRows [][]rune
+	zeroes, ones := 0, 0
+
+	for _, row := range bits {
+		if row[col] == '0' {
+			zeroes++
+			zeroRows = append(zeroRows, row)
+			continue
+		}
+		ones++
+		oneRows = append(oneRows, row)
+	}
+
+	if zeroes > ones {
+		return oxygen(zeroRows, col+1)
+	}
+	return oxygen(oneRows, col+1)
+}
+
+func co2(bits [][]rune, col int) [][]rune {
+	if len(bits) == 1 {
+		return bits
+	}
+
+	var zeroRows, oneRows [][]rune
+	zeroes, ones := 0, 0
+
+	for _, row := range bits {
+		if row[col] == '0' {
+			zeroes++
+			zeroRows = append(zeroRows, row)
+			continue
+		}
+		ones++
+		oneRows = append(oneRows, row)
+	}
+
+	if zeroes <= ones {
+		return co2(zeroRows, col+1)
+	}
+	return co2(oneRows, col+1)
+}
+
 func main() {
 	file, err := os.Open("day03_input.txt")
 	if err != nil {
@@ -36,11 +84,10 @@ func main() {
 		for _, row := range bits {
 			if row[j] == '0' {
 				zeros++
-			} else {
-				ones++
+				continue
 			}
+			ones++
 		}
-
 		if zeros > ones {
 			gamma += "0"
 			epsilon += "1"
@@ -58,4 +105,14 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Part 1: %d\n", gammaDec*epsilonDec)
+
+	oxygenDec, err := strconv.ParseInt(string(oxygen(bits, 0)[0]), 2, 64)
+	if err != nil {
+		log.Fatal(err)
+	}
+	co2Dec, err := strconv.ParseInt(string(co2(bits, 0)[0]), 2, 64)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Part 2: %d\n", oxygenDec*co2Dec)
 }
