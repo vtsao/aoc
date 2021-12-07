@@ -51,42 +51,92 @@ func main() {
 		log.Fatal(err)
 	}
 
-	overlappingPts := 0
-	points := map[point]int{}
+	overlappingPts1, overlappingPts2 := 0, 0
+	points1, points2 := map[point]int{}, map[point]int{}
 	for _, line := range lines {
-		if line.x1 != line.x2 && line.y1 != line.y2 {
-			continue
-		}
-		if line.x1 == line.x2 {
+		switch {
+		// Diagonal line.
+		case line.x1 != line.x2 && line.y1 != line.y2:
+			switch {
+			case line.x1 < line.x2 && line.y1 < line.y2:
+				for x, y := line.x1, line.y1; x <= line.x2; {
+					if mark(points2, x, y) {
+						overlappingPts2++
+					}
+					x++
+					y++
+				}
+			case line.x1 > line.x2 && line.y1 > line.y2:
+				for x, y := line.x2, line.y2; x <= line.x1; {
+					if mark(points2, x, y) {
+						overlappingPts2++
+					}
+					x++
+					y++
+				}
+			case line.x1 < line.x2 && line.y1 > line.y2:
+				for x, y := line.x1, line.y1; x <= line.x2; {
+					if mark(points2, x, y) {
+						overlappingPts2++
+					}
+					x++
+					y--
+				}
+			default:
+				for x, y := line.x2, line.y2; x <= line.x1; {
+					if mark(points2, x, y) {
+						overlappingPts2++
+					}
+					x++
+					y--
+				}
+			}
+
+		// Horizontal line.
+		case line.x1 == line.x2:
 			if line.y1 < line.y2 {
 				for y := line.y1; y <= line.y2; y++ {
-					if mark(points, line.x1, y) {
-						overlappingPts++
+					if mark(points1, line.x1, y) {
+						overlappingPts1++
+					}
+					if mark(points2, line.x1, y) {
+						overlappingPts2++
 					}
 				}
 				continue
 			}
 			for y := line.y2; y <= line.y1; y++ {
-				if mark(points, line.x1, y) {
-					overlappingPts++
+				if mark(points1, line.x1, y) {
+					overlappingPts1++
+				}
+				if mark(points2, line.x1, y) {
+					overlappingPts2++
 				}
 			}
-		}
-		if line.y1 == line.y2 {
+
+		// Vertical line.
+		default:
 			if line.x1 < line.x2 {
 				for x := line.x1; x <= line.x2; x++ {
-					if mark(points, x, line.y1) {
-						overlappingPts++
+					if mark(points1, x, line.y1) {
+						overlappingPts1++
+					}
+					if mark(points2, x, line.y1) {
+						overlappingPts2++
 					}
 				}
 				continue
 			}
 			for x := line.x2; x <= line.x1; x++ {
-				if mark(points, x, line.y1) {
-					overlappingPts++
+				if mark(points1, x, line.y1) {
+					overlappingPts1++
+				}
+				if mark(points2, x, line.y1) {
+					overlappingPts2++
 				}
 			}
 		}
 	}
-	fmt.Printf("Part 1: %d\n", overlappingPts)
+	fmt.Printf("Part 1: %d\n", overlappingPts1)
+	fmt.Printf("Part 2: %d\n", overlappingPts2)
 }
