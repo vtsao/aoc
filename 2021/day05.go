@@ -41,10 +41,22 @@ func main() {
 		input := strings.Split(scanner.Text(), " -> ")
 		start := strings.Split(input[0], ",")
 		end := strings.Split(input[1], ",")
-		x1, _ := strconv.Atoi(start[0])
-		y1, _ := strconv.Atoi(start[1])
-		x2, _ := strconv.Atoi(end[0])
-		y2, _ := strconv.Atoi(end[1])
+		x1, err := strconv.Atoi(start[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+		y1, err := strconv.Atoi(start[1])
+		if err != nil {
+			log.Fatal(err)
+		}
+		x2, err := strconv.Atoi(end[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+		y2, err := strconv.Atoi(end[1])
+		if err != nil {
+			log.Fatal(err)
+		}
 		lines = append(lines, &line{x1: x1, y1: y1, x2: x2, y2: y2})
 	}
 	if err := scanner.Err(); err != nil {
