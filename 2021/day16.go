@@ -27,7 +27,7 @@ func parseInput() string {
 	return binaryStr
 }
 
-func parseBits(binaryStr string) (string, int, int) {
+func parseBits(binaryStr string) (string, int, int, int) {
 	log.Printf("Parsing binary string %q\n", binaryStr)
 	packetVer, _ := strconv.ParseInt(binaryStr[:3], 2, 64)
 	packetVerSum := int(packetVer)
@@ -48,12 +48,13 @@ func parseBits(binaryStr string) (string, int, int) {
 
 		literalVal, _ := strconv.ParseInt(literalValStr, 2, 64)
 		log.Printf("literal value %d\n", literalVal)
-		return binaryStr[parsedBits:], parsedBits, packetVerSum
+		return binaryStr[parsedBits:], parsedBits, packetVerSum, int(literalVal)
 	}
 
 	log.Printf("Packet type operator...\n")
 	remaining := ""
 	totalParsedBits := 7
+	var subPacketVals []int
 	switch binaryStr[6] {
 	case '0':
 		subPacketLenBinaryStr := binaryStr[7:22]
@@ -65,10 +66,11 @@ func parseBits(binaryStr string) (string, int, int) {
 
 		parsedBits := 0
 		for remaining = binaryStr[22:]; parsedBits < subPacketLen; {
-			newRemaining, newParsedBits, verSum := parseBits(remaining)
+			newRemaining, newParsedBits, newPacketVerSum, newPacketVal := parseBits(remaining)
 			remaining = newRemaining
 			parsedBits += newParsedBits
-			packetVerSum += verSum
+			packetVerSum += newPacketVerSum
+			subPacketVals = append(subPacketVals, newPacketVal)
 			log.Printf("Parsed %d packets, want %d\n", parsedBits, subPacketLen)
 		}
 	case '1':
@@ -80,21 +82,61 @@ func parseBits(binaryStr string) (string, int, int) {
 
 		remaining = binaryStr[18:]
 		for i := 0; i < numSubPackets; i++ {
-			newRemaining, parsedBits, verSum := parseBits(remaining)
+			newRemaining, parsedBits, newPacketVerSum, newPacketVal := parseBits(remaining)
 			remaining = newRemaining
 			totalParsedBits += parsedBits
-			packetVerSum += verSum
+			packetVerSum += newPacketVerSum
+			subPacketVals = append(subPacketVals, newPacketVal)
 			log.Printf("Parsed %d sub-packets, want %d\n", i, numSubPackets)
 		}
 	}
 
-	return remaining, totalParsedBits, packetVerSum
+	packetVal := 0
+	switch packetTypeID {
+	case 0:
+		for _, val := range subPacketVals {
+			packetVal += val
+		}
+	case 1:
+		packetVal = subPacketVals[0]
+		for i := 1; i < len(subPacketVals); i++ {
+			packetVal *= subPacketVals[i]
+		}
+	case 2:
+		packetVal = subPacketVals[0]
+		for i := 1; i < len(subPacketVals); i++ {
+			if val := subPacketVals[i]; val < packetVal {
+				packetVal = val
+			}
+		}
+	case 3:
+		packetVal = subPacketVals[0]
+		for i := 1; i < len(subPacketVals); i++ {
+			if val := subPacketVals[i]; val > packetVal {
+				packetVal = val
+			}
+		}
+	case 5:
+		if subPacketVals[0] > subPacketVals[1] {
+			packetVal = 1
+		}
+	case 6:
+		if subPacketVals[0] < subPacketVals[1] {
+			packetVal = 1
+		}
+	case 7:
+		if subPacketVals[0] == subPacketVals[1] {
+			packetVal = 1
+		}
+	}
+
+	return remaining, totalParsedBits, packetVerSum, packetVal
 }
 
 func main() {
 	binaryStr := parseInput()
 
-	_, _, packetVerSum := parseBits(binaryStr)
+	_, _, packetVerSum, packetVal := parseBits(binaryStr)
 	fmt.Printf("Part 1: %d\n", packetVerSum)
-	// fmt.Printf("Part 2: %d\n", )
+	fmt.Printf("Part 2: %d\n", packetVal)
 }

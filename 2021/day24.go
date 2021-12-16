@@ -10,11 +10,8 @@ import (
 	"os"
 )
 
-func parseInput() ([]string, error) {
-	file, err := os.Open("day24_input.txt")
-	if err != nil {
-		return nil, err
-	}
+func parseInput() []string {
+	file, _ := os.Open("day24_input.txt")
 	defer file.Close()
 
 	var lines []string
@@ -23,18 +20,12 @@ func parseInput() ([]string, error) {
 		line := scanner.Text()
 		lines = append(lines, line)
 	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
 
-	return lines, nil
+	return lines
 }
 
 func main() {
-	lines, err := parseInput()
-	if err != nil {
-		log.Fatal(err)
-	}
+	lines := parseInput()
 
 	for _, line := range lines {
 		log.Println(line)
