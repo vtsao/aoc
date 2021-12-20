@@ -7,7 +7,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"math"
 	"os"
 	"strconv"
@@ -21,13 +20,6 @@ func explode(number string, i int) string {
 	pairParts := strings.Split(number[i+1:closingParenIdx], ",")
 	leftVal, _ := strconv.Atoi(pairParts[0])
 	rightVal, _ := strconv.Atoi(pairParts[1])
-
-	// log.Printf("%s, %d\n", number, i)
-	// log.Println(closingParenIdx)
-	// log.Println(leftPartNumber)
-	// log.Println(rightPartNumber)
-	// log.Println(leftVal)
-	// log.Println(rightVal)
 
 	for j := len(leftPartNumber) - 1; j >= 0; j-- {
 		r := leftPartNumber[j]
@@ -75,7 +67,6 @@ func split(number string, i int) string {
 func reduce(number string) string {
 reducing:
 	for {
-		log.Println(number)
 		parens := 0
 		for i, r := range number {
 			switch r {
@@ -88,19 +79,65 @@ reducing:
 				continue reducing
 			case ']':
 				parens--
-			case ',':
-			default:
-				if next := number[i+1]; next == '[' || next == ']' || next == ',' {
-					continue
-				}
-				number = split(number, i)
-				continue reducing
 			}
+		}
+		for i, r := range number {
+			if r == '[' || r == ']' || r == ',' {
+				continue
+			}
+			if next := number[i+1]; next == '[' || next == ']' || next == ',' {
+				continue
+			}
+			number = split(number, i)
+			continue reducing
 		}
 		break
 	}
 
 	return number
+}
+
+func mag(number string) int {
+	val, err := strconv.Atoi(number)
+	if err == nil {
+		return val
+	}
+
+	pairMid := 0
+	parens := 0
+	for i := 1; i < len(number)-1; i++ {
+		r := number[i]
+		switch r {
+		case '[':
+			parens++
+		case ']':
+			parens--
+		case ',':
+			if parens == 0 {
+				pairMid = i
+			}
+		}
+	}
+
+	left := mag(number[1:pairMid])
+	right := mag(number[pairMid+1 : len(number)-1])
+
+	return left*3 + 2*right
+}
+
+func largestMag(numbers []string) int {
+	largest := 0
+	for i := 0; i < len(numbers); i++ {
+		for j := i + 1; j < len(numbers); j++ {
+			if mag := mag(reduce(fmt.Sprintf("[%s,%s]", numbers[i], numbers[j]))); mag > largest {
+				largest = mag
+			}
+			if mag := mag(reduce(fmt.Sprintf("[%s,%s]", numbers[j], numbers[i]))); mag > largest {
+				largest = mag
+			}
+		}
+	}
+	return largest
 }
 
 func parseInput() []string {
@@ -119,13 +156,13 @@ func parseInput() []string {
 func main() {
 	numbers := parseInput()
 
-	sum := reduce(numbers[0])
+	sum := numbers[0]
 	for i := 1; i < len(numbers); i++ {
-		nextNum := reduce(numbers[i])
+		nextNum := numbers[i]
 		sum = fmt.Sprintf("[%s,%s]", sum, nextNum)
 		sum = reduce(sum)
 	}
 
-	fmt.Printf("Part 1: %s\n", sum)
-	// fmt.Printf("Part 2: %d\n", )
+	fmt.Printf("Part 1: %d\n", mag(sum))
+	fmt.Printf("Part 2: %d\n", largestMag(numbers))
 }
