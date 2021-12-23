@@ -68,35 +68,6 @@ func parseInput() []instruction {
 	return instructions
 }
 
-type coord struct {
-	x, y, z int
-}
-
-func reboot1(instructions []instruction) int {
-	onReactors := map[coord]struct{}{}
-	for _, instruction := range instructions {
-		kube := instruction.kube
-		if kube.xStart < -50 || kube.xEnd > 50 || kube.yStart < -50 || kube.yEnd > 50 || kube.zStart < -50 || kube.zEnd > 50 {
-			continue
-		}
-
-		for i := kube.xStart; i <= kube.xEnd; i++ {
-			for j := kube.yStart; j <= kube.yEnd; j++ {
-				for k := kube.zStart; k <= kube.zEnd; k++ {
-					c := coord{x: i, y: j, z: k}
-					if instruction.on {
-						onReactors[c] = struct{}{}
-						continue
-					}
-					delete(onReactors, c)
-				}
-			}
-		}
-	}
-
-	return len(onReactors)
-}
-
 type incExc struct {
 	kube    kuboid
 	include bool
@@ -105,71 +76,45 @@ type incExc struct {
 func intersect(k1, k2 kuboid) (kuboid, bool) {
 	k := kuboid{}
 
-	if k1.xStart >= k2.xStart && k1.xStart <= k2.xEnd {
-		k.xStart = k1.xStart
-		k.xEnd = int(math.Min(float64(k1.xEnd), float64(k2.xEnd)))
-	} else if k1.xEnd >= k2.xStart && k1.xEnd <= k2.xEnd {
-		k.xStart = k2.xStart
-		k.xEnd = int(math.Min(float64(k1.xEnd), float64(k2.xEnd)))
-	} else {
-		return kuboid{}, false
+	k.xStart = int(math.Max(float64(k1.xStart), float64(k2.xStart)))
+	k.xEnd = int(math.Min(float64(k1.xEnd), float64(k2.xEnd)))
+	k.yStart = int(math.Max(float64(k1.yStart), float64(k2.yStart)))
+	k.yEnd = int(math.Min(float64(k1.yEnd), float64(k2.yEnd)))
+	k.zStart = int(math.Max(float64(k1.zStart), float64(k2.zStart)))
+	k.zEnd = int(math.Min(float64(k1.zEnd), float64(k2.zEnd)))
+
+	if k.xStart <= k.xEnd && k.yStart <= k.yEnd && k.zStart <= k.zEnd {
+		return k, true
 	}
 
-	if k1.yStart >= k2.yStart && k1.yStart <= k2.yEnd {
-		k.yStart = k1.yStart
-		k.yEnd = int(math.Min(float64(k1.yEnd), float64(k2.yEnd)))
-	} else if k1.yEnd >= k2.yStart && k1.yEnd <= k2.yEnd {
-		k.yStart = k2.yStart
-		k.yEnd = int(math.Min(float64(k1.yEnd), float64(k2.yEnd)))
-	} else {
-		return kuboid{}, false
-	}
-
-	if k1.zStart >= k2.zStart && k1.zStart <= k2.zEnd {
-		k.zStart = k1.zStart
-		k.zEnd = int(math.Min(float64(k1.zEnd), float64(k2.zEnd)))
-	} else if k1.zEnd >= k2.zStart && k1.zEnd <= k2.zEnd {
-		k.zStart = k2.zStart
-		k.zEnd = int(math.Min(float64(k1.zEnd), float64(k2.zEnd)))
-	} else {
-		return kuboid{}, false
-	}
-
-	return k, true
+	return kuboid{}, false
 }
 
-func reboot2(instructions []instruction) int {
+func reboot(instructions []instruction, init bool) int {
 	var incExcs []incExc
 
 	for _, instruction := range instructions {
+		kube := instruction.kube
+		if init && (kube.xStart < -50 || kube.xEnd > 50 || kube.yStart < -50 || kube.yEnd > 50 || kube.zStart < -50 || kube.zEnd > 50) {
+			continue
+		}
 		for _, ie := range incExcs {
-			intersectKube, ok := intersect(instruction.kube, ie.kube)
+			intersectKube, ok := intersect(kube, ie.kube)
 			if !ok {
 				continue
 			}
-			if instruction.on {
-				if ie.include {
-					incExcs = append(incExcs, incExc{kube: intersectKube, include: false})
-					continue
-				}
-				incExcs = append(incExcs, incExc{kube: intersectKube, include: true})
-				continue
-			}
-			if ie.include {
-				incExcs = append(incExcs, incExc{kube: intersectKube, include: false})
-				continue
-			}
-			incExcs = append(incExcs, incExc{kube: intersectKube, include: false})
+
+			incExcs = append(incExcs, incExc{kube: intersectKube, include: !ie.include})
 		}
 		if instruction.on {
-			incExcs = append(incExcs, incExc{kube: instruction.kube, include: true})
+			incExcs = append(incExcs, incExc{kube: kube, include: true})
 		}
 	}
 
 	onReactors := 0
 	for _, ie := range incExcs {
 		k := ie.kube
-		reactors := (k.xEnd - k.xStart) * (k.yEnd - k.yStart) * (k.zEnd - k.zStart)
+		reactors := (k.xEnd + 1 - k.xStart) * (k.yEnd + 1 - k.yStart) * (k.zEnd + 1 - k.zStart)
 		if ie.include {
 			onReactors += reactors
 			continue
@@ -182,7 +127,6 @@ func reboot2(instructions []instruction) int {
 
 func main() {
 	instructions := parseInput()
-
-	fmt.Printf("Part 1: %d\n", reboot1(instructions))
-	fmt.Printf("Part 2: %d\n", reboot2(instructions))
+	fmt.Printf("Part 1: %d\n", reboot(instructions, true))
+	fmt.Printf("Part 2: %d\n", reboot(instructions, false))
 }
