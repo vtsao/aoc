@@ -6,124 +6,207 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"math"
 	"os"
 )
+
+type amphipod struct {
+	name         string
+	room0, room1 coord
+	energy       int
+}
+
+var amphipods = []amphipod{
+	{
+		name:   "A0",
+		room0:  coord{i: 2, j: 3},
+		room1:  coord{i: 3, j: 3},
+		energy: 1,
+	},
+	{
+		name:   "A1",
+		room0:  coord{i: 2, j: 3},
+		room1:  coord{i: 3, j: 3},
+		energy: 1,
+	},
+	{
+		name:   "B0",
+		room0:  coord{i: 2, j: 5},
+		room1:  coord{i: 3, j: 5},
+		energy: 10,
+	},
+	{
+		name:   "B1",
+		room0:  coord{i: 2, j: 5},
+		room1:  coord{i: 3, j: 5},
+		energy: 10,
+	},
+	{
+		name:   "C0",
+		room0:  coord{i: 2, j: 7},
+		room1:  coord{i: 3, j: 7},
+		energy: 100,
+	},
+	{
+		name:   "C1",
+		room0:  coord{i: 2, j: 7},
+		room1:  coord{i: 3, j: 7},
+		energy: 100,
+	},
+	{
+		name:   "D0",
+		room0:  coord{i: 2, j: 9},
+		room1:  coord{i: 3, j: 9},
+		energy: 1000,
+	},
+	{
+		name:   "D1",
+		room0:  coord{i: 2, j: 9},
+		room1:  coord{i: 3, j: 9},
+		energy: 1000,
+	},
+}
 
 type coord struct {
 	i, j int
 }
 
-func parseInput() ([][]rune, coord, coord, coord, coord, coord, coord, coord, coord) {
-	file, _ := os.Open("day23_input.txt")
-	defer file.Close()
+type state map[string]coord
 
-	var a0, a1, b0, b1, c0, c1, d0, d1 coord
-	var burrow [][]rune
-	scanner := bufio.NewScanner(file)
-	for i := 0; scanner.Scan(); i++ {
-		var row []rune
-
-		for j, col := range scanner.Text() {
-			row = append(row, col)
-			switch col {
-			case 'A':
-				if a0.i == 0 && a0.j == 0 {
-					a0 = coord{i: i, j: j}
-					continue
-				}
-				a1 = coord{i: i, j: j}
-			case 'B':
-				if b0.i == 0 && b0.j == 0 {
-					b0 = coord{i: i, j: j}
-					continue
-				}
-				b1 = coord{i: i, j: j}
-			case 'C':
-				if c0.i == 0 && c0.j == 0 {
-					c0 = coord{i: i, j: j}
-					continue
-				}
-				c1 = coord{i: i, j: j}
-			case 'D':
-				if d0.i == 0 && d0.j == 0 {
-					d0 = coord{i: i, j: j}
-					continue
-				}
-				d1 = coord{i: i, j: j}
-			}
-		}
-
-		burrow = append(burrow, row)
+func (s state) key() string {
+	k := ""
+	for _, a := range amphipods {
+		k += fmt.Sprintf("%d%d", s[a.name].i, s[a.name].j)
 	}
-
-	return burrow, a0, a1, b0, b1, c0, c1, d0, d1
+	return k
 }
 
-func occupied(burrow [][]rune, c, a0, a1, b0, b1, c0, c1, d0, d1 coord) bool {
-	if burrow[c.i][c.j] == '#' {
+type burrow struct {
+	layout [][]rune
+	state  state
+}
+
+func (b burrow) occupied(c coord) bool {
+	if b.layout[c.i][c.j] == '#' {
 		return true
 	}
-
-	if c == a0 || c == a1 || c == b0 || c == b1 || c == c0 || c == c1 || c == d0 || c == d1 {
-		return true
+	for _, a := range amphipods {
+		if c == b.state[a.name] {
+			return true
+		}
 	}
-
 	return false
 }
 
-func move(burrow [][]rune, a0, a1, b0, b1, c0, c1, d0, d1 coord) int {
-	if (a0 == coord{i: 2, j: 3} || a0 == coord{i: 3, j: 3}) &&
-		(a1 == coord{i: 2, j: 3} || a1 == coord{i: 3, j: 3}) &&
-		(b0 == coord{i: 2, j: 5} || b0 == coord{i: 3, j: 5}) &&
-		(b1 == coord{i: 2, j: 5} || b1 == coord{i: 3, j: 5}) &&
-		(c0 == coord{i: 2, j: 7} || c0 == coord{i: 3, j: 7}) &&
-		(c1 == coord{i: 2, j: 7} || c1 == coord{i: 3, j: 7}) &&
-		(d0 == coord{i: 2, j: 9} || d0 == coord{i: 3, j: 9}) &&
-		(d1 == coord{i: 2, j: 9} || d1 == coord{i: 3, j: 9}) {
+func final(b burrow) bool {
+	for _, a := range amphipods {
+		if (b.state[a.name] != a.room0) && (b.state[a.name] != a.room1) {
+			return false
+		}
+	}
+	return true
+}
+
+func hallway(s state) string {
+	for _, a := range amphipods {
+		if (s[a.name] == coord{i: 1, j: 3}) || (s[a.name] == coord{i: 1, j: 5}) || (s[a.name] == coord{i: 1, j: 7}) || (s[a.name] == coord{i: 1, j: 9}) {
+			return a.name
+		}
+	}
+	return ""
+}
+
+func neighbors(c coord) []coord {
+	return []coord{{i: c.i - 1, j: c.j}, {i: c.i + 1, j: c.j}, {i: c.i, j: c.j - 1}, {i: c.i, j: c.j + 1}}
+}
+
+func other(amphipod string) string {
+	if idx := amphipod[1]; idx == '0' {
+		return fmt.Sprintf("%s1", string(amphipod[0]))
+	}
+	return fmt.Sprintf("%s0", string(amphipod[0]))
+}
+
+func move(b burrow, visited map[string]struct{}, cache map[string]int) int {
+	if final(b) {
 		return 0
-
+	}
+	if cached, ok := cache[b.state.key()]; ok {
+		return cached
+	}
+	if _, ok := visited[b.state.key()]; ok {
+		return math.MaxInt64
 	}
 
-	// if visited state, return 0
-
+	visited[b.state.key()] = struct{}{}
 	energy := math.MaxInt64
-
-	for _, c := range []coord{{i: a0.i - 1, j: a0.j}, {i: a0.i + 1, j: a0.j}, {i: a0.i, j: a0.j - 1}, {i: a0.i, j: a0.j + 1}} {
-		if occupied(burrow, c, a0, a1, b0, b1, c0, c1, d0, d1) {
+	hallway := hallway(b.state)
+	for _, a := range amphipods {
+		if hallway != "" && hallway != a.name {
 			continue
 		}
-
-		if (c == coord{i: 1, j: 3}) || (c == coord{i: 1, j: 5}) || (c == coord{i: 1, j: 7}) || (c == coord{i: 1, j: 9}) {
-			if e := 1 + move(burrow, c, a1, b0, b1, c0, c1, d0, d1); e < energy {
-				energy = e
+		for _, c := range neighbors(b.state[a.name]) {
+			if b.occupied(c) {
+				continue
 			}
-			continue
-		}
 
-		if (c == coord{i: 3, j: 3}) {
-			if e := 1 + move(burrow, c, a1, b0, b1, c0, c1, d0, d1); e < energy {
-				energy = e
+			// If the coordinate we're trying to move to isn't in the hallway and
+			// isn't the amphipod's own room, that means we're trying to move into
+			// another amphipod's room, which isn't allowed.
+			if c.i != 1 && (c != a.room0 || c != a.room1) {
+				continue
 			}
-			continue
-		}
 
-		if (c == coord{i: 2, j: 3}) &&
-			(a1 == coord{i: 3, j: 3}) || !occupied(burrow, coord{i: 3, j: 3}, a0, a1, b0, b1, c0, c1, d0, d1) {
-			if e := 1 + move(burrow, c, a1, b0, b1, c0, c1, d0, d1); e < energy {
-				energy = e
+			if c == a.room0 && b.occupied(a.room1) && b.state[other(a.name)] != a.room1 {
+				continue
 			}
-			continue
+
+			old := b.state[a.name]
+			b.state[a.name] = c
+			e := move(b, visited, cache)
+			if e != math.MaxInt64 {
+				if e = e + a.energy; e < energy {
+					energy = e
+				}
+			}
+			b.state[a.name] = old
 		}
 	}
 
+	cache[b.state.key()] = energy
 	return energy
 }
 
+func parseInput() burrow {
+	file, _ := os.Open("day23_input.txt")
+	defer file.Close()
+
+	b := burrow{state: map[string]coord{}}
+	scanner := bufio.NewScanner(file)
+	for i := 0; scanner.Scan(); i++ {
+		var row []rune
+		for j, col := range scanner.Text() {
+			row = append(row, col)
+			if col == '.' || col == '#' {
+				continue
+			}
+			if _, ok := b.state[string(col)+"0"]; !ok {
+				b.state[string(col)+"0"] = coord{i: i, j: j}
+				continue
+			}
+			b.state[string(col)+"1"] = coord{i: i, j: j}
+		}
+		b.layout = append(b.layout, row)
+	}
+
+	return b
+}
+
 func main() {
+	burrow := parseInput()
+	energy := move(burrow, map[string]struct{}{}, map[string]int{})
+	fmt.Printf("Part 1: %d\n", energy)
 
-	// burrow, a0, a1, b0, b1, c0, c1, d0, d1 := parseInput()
-
-	// fmt.Printf("Part 1: %d\n", )
 	// fmt.Printf("Part 2: %d\n", )
 }
