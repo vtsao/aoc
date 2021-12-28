@@ -1,6 +1,8 @@
 https://adventofcode.com
 
-## Session cookie
+## Programmatically retrieving a day's input file
+
+Input is randomized for each user, so you need to be authenticated using your session cookie.
 
 1. Find session cookie on AoC site after logging in under Chrome Developer
    Tools -> Application -> Cookies.
