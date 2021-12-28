@@ -10,4 +10,8 @@ https://adventofcode.com
     session=YOUR_SESSION_COOKIE
     ```
 
-1. curl -b "$(cat .session)" -o dayXX_input.txt https://adventofcode.com/20XX/day/XX/input
+1. Run the following to programmatically retrieve the day's input:
+
+    ```shell
+    curl -b "$(cat .session)" -o dayXX_input.txt https://adventofcode.com/20XX/day/XX/input
+    ```
