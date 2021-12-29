@@ -8,7 +8,47 @@ import (
 	"bufio"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 )
+
+func resolve(vars map[string]int, arg string) int {
+	val, err := strconv.Atoi(arg)
+	if err != nil {
+		return vars[arg]
+	}
+	return val
+}
+
+func exec(instructions []string, input string) map[string]int {
+	vars := map[string]int{}
+
+	inputIdx := 0
+	for _, instStr := range instructions {
+		inst := strings.Split(instStr, " ")
+		switch inst[0] {
+		case "inp":
+			vars[inst[1]], _ = strconv.Atoi(string(input[inputIdx]))
+			inputIdx++
+		case "add":
+			vars[inst[1]] = vars[inst[1]] + resolve(vars, inst[2])
+		case "mul":
+			vars[inst[1]] = vars[inst[1]] * resolve(vars, inst[2])
+		case "div":
+			vars[inst[1]] = vars[inst[1]] / resolve(vars, inst[2])
+		case "mod":
+			vars[inst[1]] = vars[inst[1]] % resolve(vars, inst[2])
+		case "eql":
+			if vars[inst[1]] == resolve(vars, inst[2]) {
+				vars[inst[1]] = 1
+				continue
+			}
+			vars[inst[1]] = 0
+		}
+	}
+
+	return vars
+}
 
 func parseInput() []string {
 	file, _ := os.Open("day24_input.txt")
@@ -25,10 +65,11 @@ func parseInput() []string {
 }
 
 func main() {
-	lines := parseInput()
+	instructions := parseInput()
+	vars := exec(instructions, "3")
 
-	for _, line := range lines {
-		log.Println(line)
+	for v, val := range vars {
+		log.Printf("%s: %d", v, val)
 	}
 
 	// fmt.Printf("Part 1: %d\n", )
