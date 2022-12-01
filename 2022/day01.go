@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 )
 
@@ -16,35 +17,48 @@ func main() {
 	}
 	defer file.Close()
 
-	var depths []int
+	var elfCals [][]int
+	var calories []int
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		depth, err := strconv.Atoi(scanner.Text())
+		line := scanner.Text()
+
+		if line == "" {
+			elfCals = append(elfCals, calories)
+			calories = []int{}
+			continue
+		}
+
+		cal, err := strconv.Atoi(line)
 		if err != nil {
 			log.Fatal(err)
 		}
-		depths = append(depths, depth)
+		calories = append(calories, cal)
 	}
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
+	elfCals = append(elfCals, calories)
 
-	increaseCnt1 := 0
-	for i := 1; i < len(depths); i++ {
-		if depths[i] > depths[i-1] {
-			increaseCnt1++
-		}
-	}
-	fmt.Printf("Part 1: %d\n", increaseCnt1)
+	eflTotals := totalCals(elfCals)
 
-	increaseCnt2 := 0
-	prevMeasurement := depths[0] + depths[1] + depths[2]
-	for i := 1; i <= len(depths)-3; i++ {
-		curMeasurement := depths[i] + depths[i+1] + depths[i+2]
-		if curMeasurement > prevMeasurement {
-			increaseCnt2++
+	fmt.Printf("Part 1: %d\n", eflTotals[len(eflTotals)-1])
+
+	top3 := eflTotals[len(eflTotals)-1] + eflTotals[len(eflTotals)-2] + eflTotals[len(eflTotals)-3]
+	fmt.Printf("Part 2: %d\n", top3)
+}
+
+func totalCals(elfCals [][]int) []int {
+	var eflTotals []int
+
+	for _, elf := range elfCals {
+		totalCals := 0
+		for _, cals := range elf {
+			totalCals += cals
 		}
-		prevMeasurement = curMeasurement
+		eflTotals = append(eflTotals, totalCals)
 	}
-	fmt.Printf("Part 2: %d\n", increaseCnt2)
+
+	sort.Ints(eflTotals)
+	return eflTotals
 }
