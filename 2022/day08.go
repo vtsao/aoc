@@ -32,42 +32,55 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Check to see if each tree in the grid is visible.
+	// For each tree in the grid, check to see if it's visible and calculate its
+	// scenic score. Keep track of the best scenic score.
 	visibleTrees := 0
+	maxScenicScore := 0
 	for y, row := range trees {
 		for x := range row {
-			if isVisible(x, y, trees) {
+			scenicScore, ok := isVisible(x, y, trees)
+			if ok {
 				visibleTrees++
+			}
+			if scenicScore > maxScenicScore {
+				maxScenicScore = scenicScore
 			}
 		}
 	}
 
 	fmt.Printf("Part 1: %d\n", visibleTrees)
-	// fmt.Printf("Part 2: %d\n", toDelSize)
+	fmt.Printf("Part 2: %d\n", maxScenicScore)
 }
 
 type delta struct {
 	x, y int
 }
 
-// isVisible checks to see if the specified tree is visible from any direction.
-func isVisible(x, y int, trees [][]int) bool {
+// isVisible checks to see if the specified tree is visible from any direction
+// and calculates its scenic score.
+func isVisible(x, y int, trees [][]int) (int, bool) {
+	visible := false
+	scenicScore := 1
 	for _, d := range []delta{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
-		if isVisibleDir(x, y, d.x, d.y, trees) {
-			return true
+		viewingDist, ok := isVisibleDir(x, y, d.x, d.y, trees)
+		if ok {
+			visible = true
 		}
+		scenicScore *= viewingDist
 	}
-	return false
+	return scenicScore, visible
 }
 
 // isVisibleDir checks if the specified tree is visible in the direction
-// specified by the x and y deltas.
-func isVisibleDir(x, y, dx, dy int, trees [][]int) bool {
+// specified by the x and y deltas and calculates its viewing distance.
+func isVisibleDir(x, y, dx, dy int, trees [][]int) (int, bool) {
 	treeHeight := trees[y][x]
+	viewingDist := 0
 	for newX, newY := x+dx, y+dy; !(newX < 0 || newX >= len(trees[0]) || newY < 0 || newY >= len(trees)); newX, newY = newX+dx, newY+dy {
+		viewingDist++
 		if trees[newY][newX] >= treeHeight {
-			return false
+			return viewingDist, false
 		}
 	}
-	return true
+	return viewingDist, true
 }
