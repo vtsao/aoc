@@ -27,7 +27,10 @@ func main() {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		lineParts := strings.Split(scanner.Text(), " ")
-		times, _ := strconv.Atoi(lineParts[1])
+		times, err := strconv.Atoi(lineParts[1])
+		if err != nil {
+			log.Fatal(err)
+		}
 		for i := 0; i < times; i++ {
 			r.move(lineParts[0])
 		}
