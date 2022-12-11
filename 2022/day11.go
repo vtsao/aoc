@@ -8,19 +8,24 @@ import (
 )
 
 func main() {
-	monkeyBusiness1 := rounds(monkeys(), 20, 3)
-	monkeyBusiness2 := rounds(monkeys(), 10000, 1)
+	monkeyBusiness1 := rounds(monkeys(), 20, 3, true)
+	wm := 19 * 3 * 13 * 17 * 2 * 11 * 5 * 7
+	monkeyBusiness2 := rounds(monkeys(), 10000, wm, false)
 
 	fmt.Printf("Part 1: %d\n", monkeyBusiness1)
 	fmt.Printf("Part 2: %d\n", monkeyBusiness2)
 }
 
-func rounds(monkeys []*monkey, numRounds int, worryManagement int) int {
+func rounds(monkeys []*monkey, numRounds int, worryManagement int, div bool) int {
 	for i := 0; i < numRounds; i++ {
 		for _, monkey := range monkeys {
 			for _, item := range monkey.items {
 				newItem := monkey.op(item)
-				newItem /= worryManagement
+				if div {
+					newItem /= worryManagement
+				} else {
+					newItem %= worryManagement
+				}
 				monkey.test(newItem, monkeys)
 				monkey.numInspects++
 			}
