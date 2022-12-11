@@ -9,6 +9,11 @@ import (
 
 func main() {
 	monkeyBusiness1 := rounds(monkeys(), 20, 3, true)
+	// I wasn't able to figure this out (I'm bad at math), but basically you want
+	// to be able to keep the worry levels from overflowing. You can do this
+	// because all you care about is checking the mod of each worry level, not the
+	// actual worry level number. It's kind of like "wrapping" the worry level
+	// values when they get too large.
 	wm := 19 * 3 * 13 * 17 * 2 * 11 * 5 * 7
 	monkeyBusiness2 := rounds(monkeys(), 10000, wm, false)
 
@@ -16,6 +21,7 @@ func main() {
 	fmt.Printf("Part 2: %d\n", monkeyBusiness2)
 }
 
+// rounds executes the monkeys' instructions for the specified number of rounds.
 func rounds(monkeys []*monkey, numRounds int, worryManagement int, div bool) int {
 	for i := 0; i < numRounds; i++ {
 		for _, monkey := range monkeys {
@@ -40,6 +46,8 @@ func rounds(monkeys []*monkey, numRounds int, worryManagement int, div bool) int
 	return monkeys[0].numInspects * monkeys[1].numInspects
 }
 
+// monkeys returns the instructions for each monkey based on the input file. I
+// just hardcoded this manually. Could have parsed it, but whatever.
 func monkeys() []*monkey {
 	return []*monkey{
 		{
