@@ -22,7 +22,16 @@ func main() {
 			from := parse(path[i])
 			to := parse(path[i+1])
 
+			// "Draw a line" from one coord to the next and store each coord in a map.
+			// This represents the locations of each rock.
+
+			// With how the problem is structured, we only deal with horizontal or
+			// vertical lines, so we can compare equal x's or y's to determine which
+			// one it is.
 			if from.x == to.x {
+				// The "line" can start from any coord to another, so the "next" coord
+				// isn't always larger. Since the direction we "draw" the line from
+				// doesn't matter, just go from the smaller one to the larger one.
 				smallerY, largerY := from.y, to.y
 				if from.y > to.y {
 					smallerY, largerY = largerY, smallerY
@@ -55,7 +64,7 @@ func main() {
 	fmt.Printf("Part 2: %d\n", numRestingWithFloor)
 }
 
-// parse parses a coordinate string like 499,4 into a coord struct.
+// parse parses a coordinate string like "499,4" into a coord struct.
 func parse(s string) coord {
 	parts := strings.Split(s, ",")
 	x, _ := strconv.Atoi(parts[0])
@@ -67,17 +76,24 @@ type coord struct {
 	x, y int
 }
 
+// sand simulates the falling sand in the cave.
 func sand(rocks map[coord]any, floor *int) int {
 	restingSand := map[coord]any{}
 cycle:
 	for {
 		cur := coord{500, 0}
 		for {
+			// We keep simulating each grain of sand that starts from 500,0 until no
+			// sand can fall anymore (if there's a floor, part 1), or no sand comes to
+			// rest anymore (no floor, part 1).
 			if floor != nil {
 				if _, ok := restingSand[coord{500, 0}]; ok {
 					break cycle
 				}
 			} else if cur.y > 100000 {
+				// This is hacky, we assume if this grain of sand hasn't come to rest
+				// for an arbitrary amount of cycles, no more sand can come to rest.
+				// I'm sure there's an actual limit we can calculate and target here?
 				break cycle
 			}
 
@@ -101,6 +117,9 @@ cycle:
 	return len(restingSand)
 }
 
+// blocked determines whether a coord can have sand in it given the current
+// state of the cave. The logic is slightly different depending on whether we're
+// using a floor.
 func blocked(pos coord, rocks, restingSand map[coord]any, floor *int) bool {
 	if floor != nil {
 		if pos.y == *floor {
