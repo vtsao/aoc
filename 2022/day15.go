@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 // parse parses and returns the coordinates of sensor and beacon from a string
@@ -43,85 +43,27 @@ func main() {
 		sensors[sc] = sensor{sc, bc}
 	}
 
-	// fmt.Printf("Part 1: %d\n", cannotBeBeacons(2000000, sensors))
+	intervals := coverage(2000000, math.MinInt, math.MaxInt, sensors)
+	covered := 0
+	for _, interval := range intervals {
+		// End interval is not inclusive, so subtract 1.
+		covered += interval.end - interval.start - 1
+	}
+	fmt.Printf("Part 1: %d\n", covered)
 
-	//	const max = 4000000
-	//	var beacon coord
-	//
-	// outer:
-	//
-	//	for y := 0; y < max; y++ {
-	//		log.Print(y)
-	//		cov := covered(y, 0, max, false, sensors)
-	//		if len(cov) < max+1 {
-	//			for x := 0; x < max; x++ {
-	//				beacon = coord{x, y}
-	//				if _, ok := cov[beacon]; !ok {
-	//					break outer
-	//				}
-	//			}
-	//		}
-	//	}
-
-	mustBeBeacon(0, 4000000, sensors)
-	// fmt.Printf("Part 2: %d\n", lightMyWay.x*4000000+lightMyWay.y)
-}
-
-func cannotBeBeacons(y int, sensors map[coord]sensor) int {
-	count := 0
-	for x := -9999999; x < 9999999; x++ {
-		if covered(coord{x, y}, false, sensors) {
-			count++
+	for y := 0; y < 4000000; y++ {
+		intervals := coverage(y, 0, 4000000, sensors)
+		// Only one of these rows will have multiple intervals, all other rows
+		// should have a single interval from 0 to 4000000 if the input is valid.
+		//
+		// We also assume the missing beacon isn't at x coordinate 0 or 4000000, but
+		// in the middle somewhere.
+		if len(intervals) == 2 {
+			x := intervals[0].end
+			fmt.Printf("Part 2: %d\n", x*4000000+y)
+			return
 		}
 	}
-	return count
-}
-
-func mustBeBeacon(min, max int, sensors map[coord]sensor) {
-	var wg sync.WaitGroup
-
-	for y := min; y <= max; y++ {
-		y := y
-		wg.Add(1)
-		go func(y int) {
-			defer wg.Done()
-			for x := min; x <= max; x++ {
-				c := coord{x, y}
-				if !covered(c, true, sensors) {
-					fmt.Printf("Part 2: %d\n", c.x*4000000+c.y)
-					os.Exit(0)
-				}
-			}
-		}(y)
-	}
-
-	wg.Wait()
-}
-
-// for _, dx := range []int{-1, 1} {
-// 	for x := s.x; ; x += dx {
-// 		cur := coord{x, y}
-// 		if s.dist(cur) > maxDist || x < xMin || x > xMax {
-// 			break
-// 		}
-// 		if includeBeacons && cur == s.beacon {
-// 			continue
-// 		}
-// 		cov[cur] = nil
-// 	}
-// }
-
-func covered(c coord, includeBeacons bool, sensors map[coord]sensor) bool {
-	for _, s := range sensors {
-		coverageDist := s.dist(s.beacon)
-		if c == s.beacon {
-			return includeBeacons
-		}
-		if s.dist(c) <= coverageDist {
-			return true
-		}
-	}
-	return false
 }
 
 type sensor struct {
@@ -140,65 +82,64 @@ func (src *coord) dist(dest coord) int {
 	return x + y
 }
 
-// func countCovered(y int, covered map[coord]any) int {
-// 	count := 0
-// 	for c := range covered {
-// 		if c.y == y {
-// 			count++
-// 		}
-// 	}
-// 	return count
-// }
+type interval struct {
+	start, end int
+}
 
-// func markCovered(sensor, beacon coord, y int, covered map[coord]any) {
-// 	maxDist := sensor.dist(beacon)
+// coverage calculates the intervals (x coordinates) covered by all sensors for
+// the specified row.
+func coverage(y, min, max int, sensors map[coord]sensor) []interval {
+	var intervals []interval
+	for _, s := range sensors {
+		coverageDist := s.dist(s.beacon)
+		remaining := coverageDist - s.dist(coord{s.x, y})
+		if remaining < 0 {
+			continue
+		}
 
-// 	visited := map[coord]any{}
-// 	curDist := 0
-// 	queue := []coord{sensor}
-// 	for len(queue) > 0 {
-// 		curLevelLen := len(queue)
-// 		for i := 0; i < curLevelLen; i++ {
-// 			cur := queue[i]
+		// Interval ends are not inclusive.
+		interval := interval{s.x - remaining, s.x + remaining + 1}
 
-// 			if cur.x < 0 || cur.y >= 4000000 {
-// 				continue
-// 			}
+		// Cull interval to min/max.
+		if interval.start < min {
+			interval.start = min
+		}
+		if interval.end > max {
+			interval.end = max
+		}
+		intervals = append(intervals, interval)
+	}
 
-// 			if curDist > maxDist {
-// 				continue
-// 			}
+	return merge(intervals)
+}
 
-// 			if _, ok := visited[cur]; ok {
-// 				continue
-// 			}
-// 			visited[cur] = nil
-// 			if cur != beacon {
-// 				covered[cur] = nil
-// 			}
+// merge merges any overlapping intervals in the specified intervals.
+func merge(intervals []interval) []interval {
+	sort.Slice(intervals, func(i, j int) bool {
+		return intervals[i].start < intervals[j].start
+	})
 
-// 			for _, n := range neighbors(cur, y) {
-// 				queue = append(queue, n)
-// 			}
-// 		}
-// 		queue = queue[curLevelLen:]
-// 		curDist++
-// 	}
-// }
+	var merged []interval
+	var cur interval
+	for i, next := range intervals {
+		if i == 0 {
+			cur = next
+			continue
+		}
 
-// func neighbors(cur coord, y int) []coord {
-// 	if cur.y == y {
-// 		return []coord{
-// 			{cur.x - 1, cur.y},
-// 			{cur.x + 1, cur.y},
-// 		}
-// 	}
+		if next.start > cur.end {
+			merged = append(merged, cur)
+			cur = next
+			continue
+		}
 
-// 	dir := 1
-// 	if cur.y > y {
-// 		dir = -1
-// 	}
-// 	return []coord{
-// 		{cur.x, cur.y + dir},
-// 	}
-// }
+		end := next.end
+		if cur.end > end {
+			end = cur.end
+		}
+		cur = interval{cur.start, end}
+	}
+	merged = append(merged, cur)
+
+	return merged
+}
