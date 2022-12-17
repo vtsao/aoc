@@ -48,3 +48,11 @@ type valve struct {
 func (v *valve) String() string {
 	return fmt.Sprintf("{%s, %d, %v}\n", v.label, v.flowRate, v.tunnels)
 }
+
+// bfs to get shortest distance from each valve to every other valve.
+// Then starting at AA, iterate through all valves AA can get to and find the
+// max pressure you can release based on the time left.
+// Then set that node to the cur node and continue until either you've opened
+// all the valves (keep track of opened valves so you skip them), or you run
+// out of time.
+func bfs() {}
