@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -35,18 +36,19 @@ func main() {
 		parse(scanner.Text(), valves)
 	}
 
-	valveShortestDists := map[string]map[string]int{}
+	// We need to turn this problem into a graph problem where we can DFS all the
+	// paths for the best pressure.
+	allValveDistances := map[string][]valveDistance{}
 	for _, v := range valves {
-		dists := map[string]int{}
-		bfs(valves, v, dists)
-		valveShortestDists[v.label] = dists
+		allValveDistances[v.label] = bfs(valves, v)
 	}
 
-	maxPressure := dfs("AA", 30, map[string]any{}, 0, valves, valveShortestDists)
+	maxPressure := dfs(nil, "AA", 30, 0, map[string]any{}, valves, allValveDistances)
 	fmt.Printf("Part 1: %d\n", maxPressure)
 
-	maxPressure2 := dfs2("AA", "AA", 26, 26, map[string]any{}, 0, valves, valveShortestDists)
-	fmt.Printf("Part 2: %d\n", maxPressure2)
+	// This part takes a while, it's not optimal.
+	maxPressureWithElephant := dfs(map[string]int{}, "AA", 26, 0, map[string]any{}, valves, allValveDistances)
+	fmt.Printf("Part 2: %d\n", maxPressureWithElephant)
 }
 
 type valve struct {
@@ -55,29 +57,57 @@ type valve struct {
 	tunnels  []string
 }
 
-func (v *valve) String() string {
-	return fmt.Sprintf("{%s, %d, %v}\n", v.label, v.flowRate, v.tunnels)
-}
-
-func dfs(cur string, timeLeft int, visited map[string]any, pressure int, valves map[string]valve, valveShortestDists map[string]map[string]int) int {
+func dfs(elephant map[string]int, cur string, timeLeft, pressure int, visited map[string]any, valves map[string]valve, allValveDistances map[string][]valveDistance) int {
 	if timeLeft <= 0 {
 		return pressure
 	}
 
 	bestPressure := pressure
-	shorestDists := valveShortestDists[cur]
-	for v, d := range shorestDists {
-		if valves[v].flowRate == 0 {
+	valveDistances := allValveDistances[cur]
+	// DFS all the neighbors of the current valve, including itself (because you
+	// start from "AA", but you don't necessarily open it). Moving to a neighbor
+	// means opening it.
+	for _, valveDistance := range valveDistances {
+		if valves[valveDistance.valveLabel].flowRate == 0 {
 			continue
 		}
-		if _, ok := visited[v]; ok {
+		if _, ok := visited[valveDistance.valveLabel]; ok {
 			continue
 		}
 
-		visited[v] = nil
-		nextP := (timeLeft - d - 1) * valves[v].flowRate
-		p := dfs(v, timeLeft-d-1, visited, pressure+nextP, valves, valveShortestDists)
-		delete(visited, v)
+		// Calculate the final pressure you'll get after the remaining time if you
+		// were to open this valve and add it to the total pressure so far. Then
+		// DFS. This is basically if you were to open this valve and get the optimal
+		// pressure for the remaining valves on your own.
+		visited[valveDistance.valveLabel] = nil
+		nextP := (timeLeft - valveDistance.distance - 1) * valves[valveDistance.valveLabel].flowRate
+		p := dfs(elephant, valveDistance.valveLabel, timeLeft-valveDistance.distance-1, pressure+nextP, visited, valves, allValveDistances)
+		delete(visited, valveDistance.valveLabel)
+
+		// If you have an elephant, then get the optimal pressure if the elephant
+		// opens this valve and the remaining valves. By doing this you get all
+		// combinations of you opening a set of valves and the elephant opening the
+		// rest. By "opening" I mean finding the optimal pressure from that set.
+		eleP := 0
+		if elephant != nil {
+			// We need to cache the elephant's solutions, since we will likely have to
+			// calculate this many times, since there are many ways to get here.
+			// However, this still takes a while, maybe there is more I can cache?
+			if cached, ok := elephant[key(visited)]; ok {
+				eleP = cached
+			} else {
+				eleP = dfs(nil, "AA", 26, 0, visited, valves, allValveDistances)
+				elephant[key(visited)] = eleP
+			}
+		}
+
+		// If you stopped trying to open valves at this point and let the elephant
+		// do the rest, would your combined pressures be better than if you just
+		// tried to do the rest yourself? If so, then the combined pressure is the
+		// candidate pressure.
+		if eleP+pressure > p {
+			p = eleP + pressure
+		}
 		if p > bestPressure {
 			bestPressure = p
 		}
@@ -86,76 +116,41 @@ func dfs(cur string, timeLeft int, visited map[string]any, pressure int, valves 
 	return bestPressure
 }
 
-func dfs2(cur, eleCur string, timeLeft, eleTimeLeft int, visited map[string]any, pressure int, valves map[string]valve, valveShortestDists map[string]map[string]int) int {
-	if timeLeft <= 0 && eleTimeLeft <= 0 {
-		return pressure
+// key turns a visited hash set into a sorted string of valve labels to use as
+// a cache key, probably not the most optimal way to do this.
+func key(visited map[string]any) string {
+	var k []string
+	for valveLabel := range visited {
+		k = append(k, valveLabel)
 	}
-
-	bestPressure := pressure
-	shorestDists := valveShortestDists[cur]
-	eleShorestDists := valveShortestDists[eleCur]
-	for v, d := range shorestDists {
-		if valves[v].flowRate == 0 {
-			continue
-		}
-		if _, ok := visited[v]; ok {
-			continue
-		}
-		visited[v] = nil
-
-		for eleV, eleD := range eleShorestDists {
-			if v == eleV {
-				continue
-			}
-			if valves[eleV].flowRate == 0 {
-				continue
-			}
-			if _, ok := visited[eleV]; ok {
-				continue
-			}
-
-			visited[eleV] = nil
-			nextP := (timeLeft - d - 1) * valves[v].flowRate
-			if timeLeft <= 0 {
-				nextP = 0
-			}
-			eleNextP := (eleTimeLeft - eleD - 1) * valves[eleV].flowRate
-			if eleTimeLeft <= 0 {
-				eleNextP = 0
-			}
-			p := dfs2(v, eleV, timeLeft-d-1, eleTimeLeft-eleD-1, visited, pressure+nextP+eleNextP, valves, valveShortestDists)
-
-			delete(visited, eleV)
-			if p > bestPressure {
-				bestPressure = p
-			}
-		}
-
-		delete(visited, v)
-	}
-
-	return bestPressure
+	sort.Strings(k)
+	return strings.Join(k, "")
 }
 
-// bfs to get shortest distance from each valve to every other valve.
-// Then starting at AA, iterate through all valves AA can get to and find the
-// max pressure you can release based on the time left.
-// Then set that node to the cur node and continue until either you've opened
-// all the valves (keep track of opened valves so you skip them), or you run
-// out of time.
-func bfs(valves map[string]valve, start valve, dists map[string]int) {
-	q := []valve{start}
+// valveDistance represents a distance to a valve.
+type valveDistance struct {
+	valveLabel string
+	distance   int
+}
 
+// bfs finds the shortest distance from the specified valve to all other valves
+// including itself.
+func bfs(valves map[string]valve, start valve) []valveDistance {
+	var valveDistances []valveDistance
+
+	visited := map[string]any{}
+	q := []valve{start}
 	dist := 0
 	for len(q) > 0 {
 		l := len(q)
 		for i := 0; i < l; i++ {
 			cur := q[i]
-			if _, ok := dists[cur.label]; ok {
+			if _, ok := visited[cur.label]; ok {
 				continue
 			}
+			visited[cur.label] = nil
 
-			dists[cur.label] = dist
+			valveDistances = append(valveDistances, valveDistance{cur.label, dist})
 			for _, t := range cur.tunnels {
 				q = append(q, valves[t])
 			}
@@ -163,4 +158,6 @@ func bfs(valves map[string]valve, start valve, dists map[string]int) {
 		q = q[l:]
 		dist++
 	}
+
+	return valveDistances
 }
