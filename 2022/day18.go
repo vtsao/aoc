@@ -3,10 +3,11 @@
 package main
 
 import (
-	_ "embed"
 	"fmt"
 	"strconv"
 	"strings"
+
+	_ "embed"
 )
 
 //go:embed day18_input.txt
