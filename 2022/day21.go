@@ -3,9 +3,10 @@
 package main
 
 import (
-	_ "embed"
 	"fmt"
 	"strings"
+
+	_ "embed"
 )
 
 //go:embed day21_input.txt
