@@ -3,11 +3,12 @@
 package main
 
 import (
-	_ "embed"
 	"fmt"
 	"math"
 	"reflect"
 	"strings"
+
+	_ "embed"
 )
 
 //go:embed day23_input.txt
