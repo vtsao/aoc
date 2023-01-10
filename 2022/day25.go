@@ -113,6 +113,5 @@ func increment(digit string) string {
 }
 
 func main() {
-	fmt.Printf("Part 1: %q\n", toSNAFU(sumFuelReq()))
-	// fmt.Printf("Part 2: %d\n", )
+	fmt.Printf("Part 1: %s\n", toSNAFU(sumFuelReq()))
 }
