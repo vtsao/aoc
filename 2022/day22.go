@@ -14,6 +14,8 @@ import (
 //go:embed day22_input.txt
 var input string
 
+// wrapMap hardcodes the board wrapping for my specific input if the board were
+// treated as a cube. This is messy and not ideal.
 func wrapMap() map[coordAndDir]coordAndDir {
 	edgeMappings := []struct {
 		fromEdge, toEdge                     interval
